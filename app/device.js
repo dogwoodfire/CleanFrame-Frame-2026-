@@ -40,11 +40,43 @@
     function finish(err, value) { if (finished) return; finished = true; clearTimeout(timer); done(err, value); }
     return finish;
   }
+  var hdmiSources = null;
+  function hdmiPorts(done) {
+    var T = window.tizen;
+    if (!(T && T.tvwindow && T.systeminfo)) { done({ message: 'Open CleanFrame on the TV to switch inputs.' }); return; }
+    var finish = bounded(done);
+    try {
+      T.systeminfo.getPropertyValue('VIDEOSOURCE', function (v) {
+        var on = v.connected || [], off = v.disconnected || [], list = [];
+        on.concat(off).forEach(function (src) {
+          if (src.type === 'HDMI') list.push({ number: src.number, name: typeof src.editName === 'string' ? src.editName.slice(0, 40) : '', raw: src });
+        });
+        list.sort(function (x, y) { return x.number - y.number; });
+        hdmiSources = list;
+        finish(null, list.map(function (p) { return { number: p.number, name: p.name }; }));
+      }, function (err) { finish(failure(err)); });
+    } catch (err) { finish(failure(err)); }
+  }
+  function setHdmi(port, done) {
+    var finish = bounded(done, 10000), T = window.tizen;
+    function view() {
+      try { T.application.launch('org.tizen.tv-viewer', function () { finish(null); }, function (err) { finish(failure(err)); }); }
+      catch (err) { finish(failure(err)); }
+    }
+    function apply() {
+      var src = null;
+      (hdmiSources || []).forEach(function (p) { if (p.number === port) src = p.raw; });
+      if (!src) { finish({ message: 'HDMI ' + port + ' is not available on this TV.' }); return; }
+      try { T.tvwindow.setSource(src, view, function (err) { finish(failure(err)); }, 'MAIN'); }
+      catch (err) { finish(failure(err)); }
+    }
+    if (hdmiSources) { apply(); return; }
+    hdmiPorts(function (err) { if (err) finish(err); else apply(); });
+  }
   function openHdmi(id, done) {
     var port = /^cleanframe\.hdmi:([1-9])$/.exec(id);
-    if (!(window.tizen && window.tizen.tvwindow)) { unavailable(done); return; }
-    done(null);
-    window.location.href = 'hdmi.html' + (port ? '?port=' + port[1] : '');
+    if (!(window.tizen && window.tizen.tvwindow && port)) { unavailable(done); return; }
+    setHdmi(Number(port[1]), done);
   }
   function launchApp(id, done) {
     if (id && id.indexOf(HDMI_TARGET) === 0) { openHdmi(id, done); return; }
@@ -90,5 +122,5 @@
       }, function (err) { finish(failure(err)); });
     } catch (err) { finish(failure(err)); }
   }
-  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, apps: apps };
+  window.FrameDevice = { launch: launch, launchApp: launchApp, hdmiPorts: hdmiPorts, art: art, home: home, settings: settings, apps: apps };
 }());

@@ -1239,7 +1239,7 @@
     keyed(track, empty ? [] : items, function (el, it, i) {
       var a = it.id ? app(it.id) : null, left = i * g.pitch, focus = tileFocus && i === anchor, sel = tileSel && i === anchor;
       var lifted = hs.lifted && i === anchor, partial = g.broad && (left - off < -1 || left + g.tw - off > g.shelf + 1);
-      setContent(el, it.kind + '|' + (it.id || '') + '|' + (it.id ? dockLabelSize(it.id) : full) + '|' + S.c.bg + '|' + S.c.apps + '|' + homeFont(), function () { return '<span class="tile-content">' + dockTileHtml(it, full) + '</span>'; });
+      setContent(el, it.kind + '|' + (it.id || '') + '|' + (a ? a.name : '') + '|' + (it.id ? dockLabelSize(it.id) : full) + '|' + S.c.bg + '|' + S.c.apps + '|' + homeFont(), function () { return '<span class="tile-content">' + dockTileHtml(it, full) + '</span>'; });
       el.className = 'tile k-' + it.kind + (focus ? ' is-focus' : '') + (sel ? ' is-sel' : '') + (lifted ? ' is-lifted' : '') + (partial ? ' is-partial' : '')
         + (a && !a.mark ? ' is-text' : '') + (it.kind === 'add' && full ? ' is-full' : '') + (it.kind === 'app' && S.press === it.id ? ' is-press' : '')
         + (lifted && i === 0 ? ' no-l' : '') + (lifted && i >= ns - 1 ? ' no-r' : '');
@@ -1903,7 +1903,28 @@
 
   /* ---------- Start ---------- */
   cueL.innerHTML = icon('left'); cueR.innerHTML = icon('right');
+  /* HDMI tiles carry the names the TV gives its inputs. The last names are cached so the first paint is right. */
+  var HDMI_NAMES = 'cleanframe.hdmi.names.v1';
+  function applyHdmiNames(names) {
+    var changed = false;
+    HDMI_IDS.forEach(function (id, i) {
+      var a = app(id), n = typeof names[i + 1] === 'string' ? names[i + 1].replace(/\s+/g, ' ').trim().slice(0, 40) : '', want = n || 'HDMI ' + (i + 1);
+      if (a.name !== want) { a.name = want; changed = true; }
+    });
+    return changed;
+  }
+  function loadHdmiNames() {
+    FrameDevice.hdmiPorts(function (err, ports) {
+      var names = {};
+      if (err || !ports) return;
+      ports.forEach(function (p) { if (p.number >= 1 && p.number <= 4) names[p.number] = p.name; });
+      try { localStorage.setItem(HDMI_NAMES, JSON.stringify(names)); } catch (e) {}
+      if (applyHdmiNames(names)) { widthCache = {}; render(); }
+    });
+  }
   initialise();
+  try { applyHdmiNames(JSON.parse(localStorage.getItem(HDMI_NAMES) || '{}') || {}); } catch (e) {}
   setLook({}, { transient: true, startup: true });
   norm(); render(); fit(); focusStage(); updateClock(); syncRotation();
+  loadHdmiNames();
 })();
