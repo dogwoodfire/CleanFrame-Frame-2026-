@@ -6,9 +6,7 @@
 <title>CleanFrame HDMI</title>
 <style>
 html,body{margin:0;height:100%;background:#0b0d12;color:#fff;font:500 34px/1.3 Manrope,system-ui,sans-serif;overflow:hidden}
-body.live{background:transparent}
-#bar{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;padding:28px 36px;border-radius:32px;background:rgba(14,16,22,.82);transition:opacity .4s}
-body.live.quiet #bar{opacity:0}
+#bar{display:flex;flex-direction:column;align-items:center;padding:28px 36px;border-radius:32px;background:rgba(14,16,22,.82)}
 #title{font-size:30px;opacity:.75;margin-bottom:20px}
 #row{display:flex}
 .port{margin:0 9px;min-width:250px;padding:20px 26px;border-radius:22px;background:rgba(255,255,255,.08);text-align:center;border:3px solid transparent}
@@ -16,7 +14,7 @@ body.live.quiet #bar{opacity:0}
 .port small{display:block;font-size:24px;opacity:.7;margin-top:4px}
 .port.cur small:after{content:" · now"}
 #msg{min-height:1.3em;font-size:26px;opacity:.85}
-body:not(.live) #bar{position:static;transform:none;margin:240px auto 0;width:max-content}
+#bar{position:static;transform:none;margin:240px auto 0;width:max-content}
 </style>
 </head>
 <body>
@@ -29,7 +27,7 @@ body:not(.live) #bar{position:static;transform:none;margin:240px auto 0;width:ma
 (function () {
   'use strict';
   var T = window.tizen, W = T && T.tvwindow;
-  var ports = [], idx = 0, current = null, timer = 0, busy = false;
+  var ports = [], idx = 0, current = null, busy = false;
   var row = document.getElementById('row'), msg = document.getElementById('msg');
 
   function text(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -40,11 +38,6 @@ body:not(.live) #bar{position:static;transform:none;margin:240px auto 0;width:ma
     }).join('');
   }
   function say(m) { msg.textContent = m || ''; }
-  function wake() {
-    document.body.classList.remove('quiet');
-    clearTimeout(timer);
-    if (document.body.classList.contains('live')) timer = setTimeout(function () { document.body.classList.add('quiet'); }, 4000);
-  }
   function failText(e) { return (e && (e.message || e.name)) || 'The TV refused the request.'; }
   function home() { window.location.href = 'index.html'; }
 
@@ -67,32 +60,25 @@ body:not(.live) #bar{position:static;transform:none;margin:240px auto 0;width:ma
       }, function (e) { say('Could not read the TV inputs. ' + failText(e)); });
     } catch (e) { say('Could not read the TV inputs. ' + failText(e)); }
   }
+  function handOver() {
+    try {
+      T.application.launch('org.tizen.tv-viewer', function () { busy = false; },
+        function (e) { say('Input set, but the TV viewer would not open. ' + failText(e)); busy = false; });
+    } catch (e) { say('Input set, but the TV viewer would not open. ' + failText(e)); busy = false; }
+  }
   function apply() {
     var p = ports[idx];
     if (!p || busy) return;
     busy = true; say('Switching to HDMI ' + p.number + '…');
-    var done = function () { busy = false; };
     try {
-      W.setSource(p.raw, function () {
-        W.show(function () {
-          current = p.number; document.body.classList.add('live'); say(''); render(); wake(); done();
-        }, function (e) { say('Could not show the input. ' + failText(e)); done(); }, ['0px', '0px', '1920px', '1080px'], 'MAIN');
-      }, function (e) { say('Could not switch. ' + failText(e)); done(); }, 'MAIN');
-    } catch (e) { say('Could not switch. ' + failText(e)); done(); }
+      W.setSource(p.raw, function () { current = p.number; render(); handOver(); },
+        function (e) { say('Could not switch. ' + failText(e)); busy = false; }, 'MAIN');
+    } catch (e) { say('Could not switch. ' + failText(e)); busy = false; }
   }
-  function leave() {
-    var finished = false;
-    function out() { if (finished) return; finished = true; home(); }
-    if (!document.body.classList.contains('live')) { out(); return; }
-    try { W.hide(out, out, 'MAIN'); } catch (e) { out(); }
-    setTimeout(out, 1500);
-  }
+  function leave() { home(); }
   document.addEventListener('keydown', function (ev) {
     var k = ev.keyCode;
     if (k === 10009 || k === 27 || k === 8 || k === 461) { ev.preventDefault(); leave(); return; }
-    var wasQuiet = document.body.classList.contains('quiet');
-    wake();
-    if (wasQuiet) return;
     if (k === 37 && idx > 0) { idx--; render(); }
     else if (k === 39 && idx < ports.length - 1) { idx++; render(); }
     else if (k === 13) apply();
