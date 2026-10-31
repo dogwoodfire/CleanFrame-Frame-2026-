@@ -14,10 +14,10 @@
   var FULL = 'Home holds twelve apps. Remove one first.', LAST = 'Home needs one app';
 
   var PRIMARY_APPS = [
-    { id: 'hdmi1', name: 'HDMI 1', mark: false, appId: 'cleanframe.hdmi:1' },
-    { id: 'hdmi2', name: 'HDMI 2', mark: false, appId: 'cleanframe.hdmi:2' },
-    { id: 'hdmi3', name: 'HDMI 3', mark: false, appId: 'cleanframe.hdmi:3' },
-    { id: 'hdmi4', name: 'HDMI 4', mark: false, appId: 'cleanframe.hdmi:4' },
+    { id: 'hdmi1', name: 'HDMI 1', mark: true, brand: 'hdmi', appId: 'cleanframe.hdmi:1' },
+    { id: 'hdmi2', name: 'HDMI 2', mark: true, brand: 'hdmi', appId: 'cleanframe.hdmi:2' },
+    { id: 'hdmi3', name: 'HDMI 3', mark: true, brand: 'hdmi', appId: 'cleanframe.hdmi:3' },
+    { id: 'hdmi4', name: 'HDMI 4', mark: true, brand: 'hdmi', appId: 'cleanframe.hdmi:4' },
     { id: 'netflix', name: 'Netflix', mark: true, appId: 'org.tizen.netflix-app' },
     { id: 'youtube', name: 'YouTube', mark: true, appId: '9Ur5IzDKqV.TizenYouTube' },
     { id: 'disneyplus', name: 'Disney+', mark: true, appId: 'MCmYXNxgcu.DisneyPlus' },
@@ -1239,7 +1239,7 @@
     keyed(track, empty ? [] : items, function (el, it, i) {
       var a = it.id ? app(it.id) : null, left = i * g.pitch, focus = tileFocus && i === anchor, sel = tileSel && i === anchor;
       var lifted = hs.lifted && i === anchor, partial = g.broad && (left - off < -1 || left + g.tw - off > g.shelf + 1);
-      setContent(el, it.kind + '|' + (it.id || '') + '|' + (a ? a.name : '') + '|' + (it.id ? dockLabelSize(it.id) : full) + '|' + S.c.bg + '|' + S.c.apps + '|' + homeFont(), function () { return '<span class="tile-content">' + dockTileHtml(it, full) + '</span>'; });
+      setContent(el, it.kind + '|' + (it.id || '') + '|' + (a ? a.name + (a.brand || '') : '') + '|' + (it.id ? dockLabelSize(it.id) : full) + '|' + S.c.bg + '|' + S.c.apps + '|' + homeFont(), function () { return '<span class="tile-content">' + dockTileHtml(it, full) + '</span>'; });
       el.className = 'tile k-' + it.kind + (focus ? ' is-focus' : '') + (sel ? ' is-sel' : '') + (lifted ? ' is-lifted' : '') + (partial ? ' is-partial' : '')
         + (a && !a.mark ? ' is-text' : '') + (it.kind === 'add' && full ? ' is-full' : '') + (it.kind === 'app' && S.press === it.id ? ' is-press' : '')
         + (lifted && i === 0 ? ' no-l' : '') + (lifted && i >= ns - 1 ? ' no-r' : '');
@@ -1905,11 +1905,19 @@
   cueL.innerHTML = icon('left'); cueR.innerHTML = icon('right');
   /* HDMI tiles carry the names the TV gives its inputs. The last names are cached so the first paint is right. */
   var HDMI_NAMES = 'cleanframe.hdmi.names.v1';
+  /* Known device names get their maker's mark; anything else keeps the generic HDMI icon. */
+  function hdmiBrand(name) {
+    if (/apple|\batv\b/i.test(name)) return 'apple';
+    if (/switch|nintendo/i.test(name)) return 'nintendoswitch';
+    if (/playstation|\bps\s?[2-5]\b|\bps\b/i.test(name)) return 'playstation';
+    if (/xbox/i.test(name)) return 'xbox';
+    return 'hdmi';
+  }
   function applyHdmiNames(names) {
     var changed = false;
     HDMI_IDS.forEach(function (id, i) {
-      var a = app(id), n = typeof names[i + 1] === 'string' ? names[i + 1].replace(/\s+/g, ' ').trim().slice(0, 40) : '', want = n || 'HDMI ' + (i + 1);
-      if (a.name !== want) { a.name = want; changed = true; }
+      var a = app(id), n = typeof names[i + 1] === 'string' ? names[i + 1].replace(/\s+/g, ' ').trim().slice(0, 40) : '', want = n || 'HDMI ' + (i + 1), brand = hdmiBrand(n);
+      if (a.name !== want || a.brand !== brand) { a.name = want; a.brand = brand; changed = true; }
     });
     return changed;
   }
