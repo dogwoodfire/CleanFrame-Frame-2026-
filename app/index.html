@@ -34,6 +34,26 @@ html,body{margin:0;background:#000;color:#fff;font:26px/1.3 monospace}
     var info = t.application.getAppInfo('org.tizen.tv-viewer');
     line('getAppInfo tv-viewer: ' + JSON.stringify(info));
   } catch (e) { line('getAppInfo tv-viewer: ' + (e && e.message || e)); }
+  function members(label, obj) {
+    if (!obj) { line(label + ': absent'); return; }
+    var names = [], seen = {}, o = obj, depth = 0;
+    while (o && depth < 3) {
+      Object.getOwnPropertyNames(o).forEach(function (n) {
+        if (seen[n] || n === 'constructor') return;
+        seen[n] = 1;
+        var d = Object.getOwnPropertyDescriptor(o, n);
+        names.push(d && typeof d.value === 'function' ? n + '/' + d.value.length : n + (d && d.get ? '(accessor)' : ''));
+      });
+      o = Object.getPrototypeOf(o); depth++;
+    }
+    line(label + ' [' + typeof obj + ']: ' + names.join(', '));
+  }
+  var tvs = w.tvs || {};
+  ['SourceControl', 'AVControl', 'ServiceNavigation', 'NavigationCriteria', 'CriteriaHelper'].forEach(function (n) {
+    members('webapis.tvs.' + n, tvs[n]);
+    if (tvs[n] && tvs[n].prototype) members('webapis.tvs.' + n + '.prototype', tvs[n].prototype);
+  });
+  if (tvs.SourceControl && tvs.SourceControl.SourceType) line('SourceType: ' + JSON.stringify(tvs.SourceControl.SourceType));
   try {
     t.application.getAppsInfo(function (list) {
       var hits = list.filter(function (a) { return /viewer|source|hdmi|selector/i.test(a.id + ' ' + a.name); });
