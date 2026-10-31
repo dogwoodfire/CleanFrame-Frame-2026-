@@ -15,7 +15,7 @@ html,body{margin:0;background:transparent;color:#fff;font:32px/1.4 monospace}
   var T = window.tizen, W = T && T.tvwindow;
   var log = [], ports = [], idx = 0;
   function render() {
-    var head = 'HDMI TEST v8. Left/Right = pick port, OK = switch, Back = hide + exit.\n';
+    var head = 'HDMI TEST v9. Left/Right = pick port, OK = switch, Back = hide + exit.\n';
     var sel = ports.length ? 'Selected: ' + label(ports[idx]) + '  (' + (idx + 1) + '/' + ports.length + ')' : 'No ports found';
     document.getElementById('s').textContent = head + sel + '\n' + log.join('\n');
   }
@@ -28,7 +28,7 @@ html,body{margin:0;background:transparent;color:#fff;font:32px/1.4 monospace}
   try {
     T.systeminfo.getPropertyValue('VIDEOSOURCE', function (v) {
       (v.connected || []).concat(v.disconnected || []).forEach(function (s) {
-        if (s.type === 'HDMI') ports.push({ type: 'HDMI', number: s.number, editName: s.editName, connected: (v.connected || []).indexOf(s) >= 0 });
+        if (s.type === 'HDMI') ports.push({ raw: s, type: 'HDMI', number: s.number, editName: s.editName, connected: (v.connected || []).indexOf(s) >= 0 });
       });
       ports.sort(function (a, b) { return a.number - b.number; });
       render();
@@ -45,8 +45,8 @@ html,body{margin:0;background:transparent;color:#fff;font:32px/1.4 monospace}
   function apply() {
     var p = ports[idx];
     if (!p) return;
-    var src = { type: p.type, number: p.number };
-    say('setSource ' + JSON.stringify(src));
+    var src = p.raw;
+    say('setSource HDMI ' + p.number + ' (TV-supplied object)');
     try {
       W.setSource(src, function () { say('setSource ok'); showWin(); },
         function (e) { say('setSource error ' + err(e)); }, 'MAIN');
