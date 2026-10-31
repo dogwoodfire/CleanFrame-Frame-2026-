@@ -13,6 +13,7 @@ html,body{margin:0;background:#000;color:#fff;font:26px/1.3 monospace}
 (function () {
   var out = [];
   function line(s) { out.push(s); }
+  function section(title) { line('=== ' + title + ' ==='); }
   function keys(obj) {
     var k = [];
     try { for (var p in obj) k.push(p); } catch (e) { return ['(error ' + e + ')']; }
@@ -24,6 +25,7 @@ html,body{margin:0;background:#000;color:#fff;font:26px/1.3 monospace}
   }
   line('CleanFrame read-only API probe. Nothing is launched or changed. Press Back to exit.');
   line('UA: ' + navigator.userAgent.replace(/^.*?\(/, '('));
+  section('tvwindow read-only checks');
   describe('tizen', window.tizen);
   var t = window.tizen || {};
   ['application', 'tvinputdevice', 'tvwindow', 'tvchannel', 'systeminfo', 'tvaudiocontrol', 'filesystem'].forEach(function (n) { describe('tizen.' + n, t[n]); });
@@ -50,6 +52,40 @@ html,body{margin:0;background:#000;color:#fff;font:26px/1.3 monospace}
   }
   members('tizen.tvwindow', t.tvwindow);
   members('webapis.avinfo', w.avinfo);
+  if (t.tvwindow) {
+    try {
+      line('tizen.tvwindow.getAvailableWindows.length=' + t.tvwindow.getAvailableWindows.length);
+    } catch (e) { line('tvwindow getAvailableWindows length error: ' + (e && e.message || e)); }
+    try {
+      line('tizen.tvwindow.getSource.length=' + t.tvwindow.getSource.length);
+    } catch (e) { line('tvwindow getSource length error: ' + (e && e.message || e)); }
+    try {
+      line('tizen.tvwindow.setSource.length=' + t.tvwindow.setSource.length + ' (NOT CALLED)');
+    } catch (e) { line('tvwindow setSource length error: ' + (e && e.message || e)); }
+    try {
+      t.tvwindow.getAvailableWindows(function (wins) {
+        line('getAvailableWindows ok: ' + JSON.stringify(wins));
+        show();
+      }, function (err) {
+        line('getAvailableWindows error: ' + JSON.stringify(err));
+        show();
+      });
+    } catch (e) { line('getAvailableWindows threw: ' + (e && e.message || e)); }
+    ['MAIN', 'PIP'].forEach(function (wname) {
+      try {
+        t.tvwindow.getSource(wname, function (src) {
+          line('getSource(' + wname + ') ok: ' + JSON.stringify(src));
+          show();
+        }, function (err) {
+          line('getSource(' + wname + ') error: ' + JSON.stringify(err));
+          show();
+        });
+      } catch (e) { line('getSource(' + wname + ') threw: ' + (e && e.message || e)); }
+    });
+  } else {
+    line('tizen.tvwindow absent');
+  }
+  section('API inventory');
   var tvs = w.tvs || {};
   ['SourceControl', 'AVControl', 'ServiceNavigation', 'NavigationCriteria', 'CriteriaHelper'].forEach(function (n) {
     members('webapis.tvs.' + n, tvs[n]);
