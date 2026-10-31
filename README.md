@@ -31,9 +31,23 @@ The public preview uses the included Manrope, Geist and Newsreader fonts.
 - Use a photograph, light or dark background, with a simple 12-hour clock.
 - Adjust typography, focus and glass materials through the same Settings interface.
 - Choose and reorder Home apps; discover installed apps on the TV.
+- Keep up to twelve apps in the Dock. The first four are the TV's HDMI inputs, named from the TV's own input names (Settings > Connected Devices) and shown with a brand icon where the name matches Apple, Nintendo Switch, PlayStation or Xbox, otherwise a generic HDMI icon. Selecting one switches input in place, with no picker screen.
+- An All apps button sits at the end of the Dock and opens the full app list, so rarely used built-in apps stay out of the way.
 - Select from fifteen wallpapers and save your preferences locally.
 
 The glass and blur are rendered ahead of time. The TV loads the finished images and uses transforms and opacity for focus feedback.
+
+### Changes in this fork
+
+This fork ([dogwoodfire/CleanFrame-Frame-2026-](https://github.com/dogwoodfire/CleanFrame-Frame-2026-)) is set up for a Samsung The Frame (Tizen 9.0) with several HDMI devices:
+
+- Dock layout starts with HDMI 1-4, switched through `tizen.tvwindow.setSource` and then `org.tizen.tv-viewer`. This needs the `tv.window` privilege in `app/config.xml`.
+- Saved Docks migrate once so the HDMI inputs are added without losing your other apps.
+- The Dock cap is twelve apps; the All apps button is not counted and does not appear in List layout.
+- Brand icons are Simple Icons (CC0) plus an original generic HDMI icon; sources are in `app/assets/icons/SOURCES.json`. Trademarks remain with their owners.
+- The earlier HDMI picker page was removed.
+
+The in-place HDMI switching and input names were tested against a stubbed TV API in a browser; check them on your own TV.
 
 ## Use a coding agent
 
