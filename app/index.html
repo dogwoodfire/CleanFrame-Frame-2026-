@@ -4,6 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CleanFrame</title>
+<script>
+/* Native Home launches this app with operation/main, same as any other open.
+   Send that one launch reason straight to the HDMI picker; a normal open (from
+   the hub tile, a remote's app key, etc.) still lands on the Dock below. */
+(function () {
+  try {
+    var control = window.tizen && tizen.application.getCurrentApplication().getRequestedAppControl();
+    if (control && control.appControl && control.appControl.operation === 'http://tizen.org/appcontrol/operation/main') {
+      window.location.replace('hdmi.html');
+    }
+  } catch (e) {}
+}());
+</script>
 <link rel="stylesheet" href="assets/fonts.css">
 <link rel="stylesheet" href="assets/typefaces.css">
 <link rel="stylesheet" href="assets/private-fonts.css">
