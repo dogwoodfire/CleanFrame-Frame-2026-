@@ -8,7 +8,7 @@ html,body{margin:0;background:#000;color:#fff;font:26px/1.3 monospace}
 #o{white-space:pre-wrap;padding:40px 60px}
 </style>
 </head>
-<body><div id="o">Probing…</div>
+<body><div id="top" style="white-space:pre-wrap;padding:40px 60px 0"></div><div id="o">Probing…</div>
 <script>
 (function () {
   var out = [];
@@ -62,26 +62,32 @@ html,body{margin:0;background:#000;color:#fff;font:26px/1.3 monospace}
     try {
       line('tizen.tvwindow.setSource.length=' + t.tvwindow.setSource.length + ' (NOT CALLED)');
     } catch (e) { line('tvwindow setSource length error: ' + (e && e.message || e)); }
+    var topOut = ['TVWINDOW RESULTS (read-only)', 'getAvailableWindows: pending', 'getSource(MAIN): pending', 'getVideoResolution: pending'];
+    function tl(i, s) { topOut[i] = s; document.getElementById('top').textContent = topOut.join('\n'); }
+    tl(0, topOut[0]);
+    function safe(s) { try { return JSON.stringify(s); } catch (e) { return String(s); } }
     try {
       t.tvwindow.getAvailableWindows(function (wins) {
-        line('getAvailableWindows ok: ' + JSON.stringify(wins));
-        show();
+        tl(1, 'getAvailableWindows ok: ' + safe(wins));
       }, function (err) {
-        line('getAvailableWindows error: ' + JSON.stringify(err));
-        show();
+        tl(1, 'getAvailableWindows error: ' + safe(err) + ' ' + (err && err.name) + ' ' + (err && err.message));
       });
-    } catch (e) { line('getAvailableWindows threw: ' + (e && e.message || e)); }
-    ['MAIN', 'PIP'].forEach(function (wname) {
-      try {
-        t.tvwindow.getSource(wname, function (src) {
-          line('getSource(' + wname + ') ok: ' + JSON.stringify(src));
-          show();
-        }, function (err) {
-          line('getSource(' + wname + ') error: ' + JSON.stringify(err));
-          show();
-        });
-      } catch (e) { line('getSource(' + wname + ') threw: ' + (e && e.message || e)); }
-    });
+    } catch (e) { tl(1, 'getAvailableWindows threw: ' + (e && e.message || e)); }
+    try {
+      t.tvwindow.getSource('MAIN', function (src) {
+        tl(2, 'getSource(MAIN) ok: ' + safe(src));
+      }, function (err) {
+        tl(2, 'getSource(MAIN) error: ' + safe(err) + ' ' + (err && err.name) + ' ' + (err && err.message));
+      });
+    } catch (e) { tl(2, 'getSource(MAIN) threw: ' + (e && e.message || e)); }
+    try {
+      var rv = t.tvwindow.getVideoResolution('MAIN', function (r) {
+        tl(3, 'getVideoResolution ok: ' + safe(r));
+      }, function (err) {
+        tl(3, 'getVideoResolution error: ' + safe(err) + ' ' + (err && err.name) + ' ' + (err && err.message));
+      });
+      if (rv !== undefined) tl(3, 'getVideoResolution returned: ' + safe(rv));
+    } catch (e) { tl(3, 'getVideoResolution threw: ' + (e && e.message || e)); }
   } else {
     line('tizen.tvwindow absent');
   }
