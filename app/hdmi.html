@@ -43,7 +43,7 @@ html,body{margin:0;height:100%;background:#0b0d12 center/cover no-repeat;color:#
   function render() {
     row.innerHTML = ports.map(function (p, i) {
       var cls = 'port' + (i === idx ? ' sel' : '') + (current === p.number ? ' cur' : '');
-      return '<div class="' + cls + '">HDMI ' + p.number + '<small>' + text(p.editName || (p.connected ? 'Connected' : 'No signal')) + '</small></div>';
+      return '<div class="' + cls + '">' + text(p.editName || 'HDMI ' + p.number) + '<small>' + (p.editName ? 'HDMI ' + p.number : (p.connected ? 'Connected' : 'No signal')) + '</small></div>';
     }).join('');
   }
   function say(m) { msg.textContent = m || ''; }
@@ -71,6 +71,7 @@ html,body{margin:0;height:100%;background:#0b0d12 center/cover no-repeat;color:#
   }
   function handOver() {
     handedOver = true;
+    setTimeout(function () { if (handedOver) document.body.style.visibility = 'hidden'; }, 150);
     try {
       T.application.launch('org.tizen.tv-viewer', function () { busy = false; },
         function (e) { say('Input set, but the TV viewer would not open. ' + failText(e)); busy = false; });
@@ -88,7 +89,7 @@ html,body{margin:0;height:100%;background:#0b0d12 center/cover no-repeat;color:#
   function leave() { home(); }
   /* Coming back from the TV viewer: return to the Dock, not a stale 'Switching…' picker. */
   document.addEventListener('visibilitychange', function () {
-    if (handedOver && !document.hidden) home();
+    if (handedOver) { if (document.hidden) home(); else document.body.style.visibility = 'hidden'; }
   });
   document.addEventListener('keydown', function (ev) {
     var k = ev.keyCode;
