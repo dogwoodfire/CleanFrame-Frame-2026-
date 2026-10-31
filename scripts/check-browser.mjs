@@ -6,7 +6,7 @@ import { openPreview, root } from './browser.mjs';
 const KEY = 'cleanframe.home.v1';
 const PRIMARY = ['netflix', 'youtube', 'disneyplus', 'primevideo', 'appletv', 'bbciplayer', 'itvx', 'channel4', 'hdmi'];
 const IDS = ['org.tizen.netflix-app', '9Ur5IzDKqV.TizenYouTube', 'MCmYXNxgcu.DisneyPlus', 'org.tizen.primevideo', 'com.samsung.tv.aria-video', 'DqEoaplKlw.bbchybrid', 'OEvCiupaFR.ITVHub', 'OCaxbgg9v6.chfourctv', 'cleanframe.hdmi'];
-const NAMES = ['Netflix', 'YouTube', 'Disney+', 'Prime Video', 'Apple TV', 'BBC iPlayer', 'ITVX', 'Channel 4', 'HDMI'];
+const NAMES = ['Netflix', 'YouTube', 'Disney+', 'Prime Video', 'Apple TV', 'BBC iPlayer', 'ITVX', 'Channel 4', 'Plex'];
 const EXTRA = 'AbCdEf1234.FamilyApp', SPOTIFY = 'rJeHak5zRg.Spotify';
 const UNSAFE_NAME = 'Family <img src=x onerror="window.__catalogXss=1"> & TV';
 const CATALOG = IDS.map((id, i) => ({ id, name: NAMES[i], show: true, iconPath: '' })).concat([
@@ -248,6 +248,14 @@ try {
     await page({ seed: baseline({ mode: 'open' }), storageFailure: true });
     check('Failed open-mode write retains prior photo', (await state()).wallpaper === walls[0].id && (await stored()).wallpaper === walls[0].id);
   });
+  await run('Saved Dock from before HDMI gains the HDMI tile', async () => {
+    const old = ['netflix', 'youtube', 'disneyplus', 'primevideo', 'appletv', 'bbciplayer', 'itvx', 'channel4', 'plex'];
+    await page({ seed: baseline({ dock: old }) });
+    check('Legacy Plex slot becomes HDMI', same((await state()).dock, old.map(id => id === 'plex' ? 'hdmi' : id)), (await state()).dock);
+    await closePage();
+    await page({ seed: { ...baseline({ dock: ['netflix', 'youtube'] }), hdmiOffered: true } });
+    check('Removed HDMI is not re-added once offered', same((await state()).dock, ['netflix', 'youtube']), (await state()).dock);
+  });
   await run('Font recovery invalidates fallback measurements', async () => {
     const seed = baseline({ dock: ['channel4', 'netflix'], lastApp: 'channel4', look: { bg: 'photo', layout: 'list', apps: 'both', font: 'manrope', controls: 'both', focus: 'glass', material: 'soft' } });
     const geometry = () => current.evaluate(() => ({
@@ -399,7 +407,7 @@ try {
   await run('Real catalogue and native launch boundary', async () => {
     await page(); await library();
     const names = await current.locator('[data-action^="apps.open."] .label').allTextContents();
-    check('Consumer catalogue excludes services, self and duplicate YouTube', names.length === 12 && names.filter(n => n === 'YouTube').length === 1 && !names.includes('CleanFrame') && !names.includes('Background worker'), names);
+    check('Consumer catalogue excludes services, self and duplicate YouTube', names.length === 13 && names.includes('HDMI') && names.filter(n => n === 'YouTube').length === 1 && !names.includes('CleanFrame') && !names.includes('Background worker'), names);
     check('Installed names stay text, including HTML punctuation', names.includes(UNSAFE_NAME) && !(await current.evaluate(() => window.__catalogXss)));
     check('Exploration fixtures do not appear', !names.includes('Jellyfin'));
     await act('apps.open.' + SPOTIFY); await current.waitForFunction(() => __tv.calls.length > 0);
@@ -440,7 +448,7 @@ try {
     check('Catalogue failure leaves Home intact', same((await state()).dock, PRIMARY));
     await current.evaluate(() => { __tv.catalogFailure = false; }); await act('apps.retry');
     await current.waitForSelector('[data-action="apps.open.' + EXTRA + '"]');
-    check('Retry displays real installed names', (await current.locator('[data-action^="apps.open."]').count()) === 12);
+    check('Retry displays real installed names', (await current.locator('[data-action^="apps.open."]').count()) === 13);
   });
   await run('Native icon and failed-image fallback', async () => {
     await page({ catalog: CATALOG.map(a => a.id === EXTRA ? { ...a, iconPath: '/home/assets/icons/netflix.svg' } : a) });
