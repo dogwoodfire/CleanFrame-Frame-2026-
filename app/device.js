@@ -9,8 +9,7 @@
     appletv: 'com.samsung.tv.aria-video',
     bbciplayer: 'DqEoaplKlw.bbchybrid',
     itvx: 'OEvCiupaFR.ITVHub',
-    channel4: 'OCaxbgg9v6.chfourctv',
-    plex: 'kIciSQlYEM.plex'
+    channel4: 'OCaxbgg9v6.chfourctv'
   };
   var STREAMING = ['as6cYRgkPy.Binge', '73iTZRTc34.Stan', '5b8c3eb16b.BeamCTVDev',
     'cj37Ni3qXM.HBONow', 'LBUAQX1exg.Hulu', 'gzcc4LRFBF.Peacock', 'rJyOSqC6Up.CBSAllAccess',
@@ -24,7 +23,7 @@
   var INTERNAL = ['adplatform.ADPlayer', 'WykOS4t4F0.cmsWebApp', '25emanual3.emanual',
     'd0m1lV1nt2.emanual', '2022ePop01.SmartTV',
     'ZODRT12q2l.WebAccountExtension', 'ByJlgt0XeD.CastSettingsApp', 'tv6pbVMQFF.PrivacyChoices'];
-  var SELF = 'nClrkHome1.FrameHome';
+  var SELF = 'nClrkHome1.FrameHome', HDMI_TARGET = 'cleanframe.hdmi';
   function api() { return window.tizen && window.tizen.application; }
   function selfId() {
     try { return api().getCurrentApplication().appInfo.id || SELF; }
@@ -41,7 +40,13 @@
     function finish(err, value) { if (finished) return; finished = true; clearTimeout(timer); done(err, value); }
     return finish;
   }
+  function openHdmi(done) {
+    if (!(window.tizen && window.tizen.tvwindow)) { unavailable(done); return; }
+    done(null);
+    window.location.href = 'hdmi.html';
+  }
   function launchApp(id, done) {
+    if (id === HDMI_TARGET) { openHdmi(done); return; }
     if (!api()) { unavailable(done); return; }
     var finish = bounded(done);
     try { api().launch(id, function () { finish(null); }, function (err) { finish(failure(err)); }); }

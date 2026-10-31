@@ -22,7 +22,7 @@
     { id: 'bbciplayer', name: 'BBC iPlayer', mark: false, appId: 'DqEoaplKlw.bbchybrid' },
     { id: 'itvx', name: 'ITVX', mark: false, appId: 'OEvCiupaFR.ITVHub' },
     { id: 'channel4', name: 'Channel 4', mark: false, appId: 'OCaxbgg9v6.chfourctv' },
-    { id: 'plex', name: 'Plex', mark: false, appId: 'kIciSQlYEM.plex' }
+    { id: 'hdmi', name: 'HDMI', mark: false, appId: 'cleanframe.hdmi' }
   ];
   var PRIMARY = PRIMARY_APPS.map(function (a) { return a.id; }), APPS = PRIMARY_APPS.slice(), ALPHA = [];
   var WALLS = window.CleanFrameWallpapers || [{ id: 'misty', name: 'Misty coast', tone: 'light', ut: { tr: 'mist', br: 'mist' }, frostVeil: .20 }];
