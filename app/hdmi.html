@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CleanFrame HDMI test</title>
+<style>
+html,body{margin:0;background:transparent;color:#fff;font:32px/1.4 monospace}
+#s{position:fixed;left:40px;top:30px;right:40px;background:rgba(0,0,0,.8);padding:16px 24px;white-space:pre-wrap;word-break:break-all}
+</style>
+</head>
+<body>
+<div id="s">Starting…</div>
+<script>
+(function () {
+  var T = window.tizen, W = T && T.tvwindow;
+  var log = [], ports = [], idx = 0;
+  function render() {
+    var head = 'HDMI TEST v8. Left/Right = pick port, OK = switch, Back = hide + exit.\n';
+    var sel = ports.length ? 'Selected: ' + label(ports[idx]) + '  (' + (idx + 1) + '/' + ports.length + ')' : 'No ports found';
+    document.getElementById('s').textContent = head + sel + '\n' + log.join('\n');
+  }
+  function label(p) {
+    return 'HDMI ' + p.number + (p.editName ? ' "' + p.editName + '"' : '') + (p.connected ? ' [connected]' : ' [not connected]');
+  }
+  function say(m) { log.push(m); if (log.length > 8) log.shift(); render(); }
+  function err(e) { return (e && e.name) + ' ' + (e && e.message || e); }
+
+  try {
+    T.systeminfo.getPropertyValue('VIDEOSOURCE', function (v) {
+      (v.connected || []).concat(v.disconnected || []).forEach(function (s) {
+        if (s.type === 'HDMI') ports.push({ type: 'HDMI', number: s.number, editName: s.editName, connected: (v.connected || []).indexOf(s) >= 0 });
+      });
+      ports.sort(function (a, b) { return a.number - b.number; });
+      render();
+    }, function (e) { say('VIDEOSOURCE error ' + err(e)); });
+  } catch (e) { say('VIDEOSOURCE threw ' + err(e)); }
+
+  function showWin() {
+    try {
+      W.show(function () { say('show ok'); },
+        function (e) { say('show error ' + err(e)); },
+        ['0px', '0px', '1920px', '1080px'], 'MAIN');
+    } catch (e) { say('show threw ' + err(e)); }
+  }
+  function apply() {
+    var p = ports[idx];
+    if (!p) return;
+    var src = { type: p.type, number: p.number };
+    say('setSource ' + JSON.stringify(src));
+    try {
+      W.setSource(src, function () { say('setSource ok'); showWin(); },
+        function (e) { say('setSource error ' + err(e)); }, 'MAIN');
+    } catch (e) { say('setSource threw ' + err(e)); }
+  }
+  function leave() {
+    var done = false;
+    function out() { if (done) return; done = true; try { T.application.getCurrentApplication().exit(); } catch (e) {} }
+    try { W.hide(out, out, 'MAIN'); } catch (e) { out(); }
+    setTimeout(out, 1500);
+  }
+  document.addEventListener('keydown', function (ev) {
+    if (ev.keyCode === 37 && idx > 0) { idx--; render(); }
+    else if (ev.keyCode === 39 && idx < ports.length - 1) { idx++; render(); }
+    else if (ev.keyCode === 13) apply();
+    else if (ev.keyCode === 10009 || ev.keyCode === 27) leave();
+  });
+  render();
+}());
+</script>
+</body>
+</html>
