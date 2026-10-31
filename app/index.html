@@ -5,7 +5,8 @@
 <title>CleanFrame API probe</title>
 <style>
 html,body{margin:0;background:#000;color:#fff;font:26px/1.3 monospace}
-#o{white-space:pre-wrap;padding:40px 60px}
+#o{display:none}
+#top{font-size:40px;line-height:1.5;word-break:break-all}
 </style>
 </head>
 <body><div id="top" style="white-space:pre-wrap;padding:40px 60px 0"></div><div id="o">Probing…</div>
@@ -62,7 +63,7 @@ html,body{margin:0;background:#000;color:#fff;font:26px/1.3 monospace}
     try {
       line('tizen.tvwindow.setSource.length=' + t.tvwindow.setSource.length + ' (NOT CALLED)');
     } catch (e) { line('tvwindow setSource length error: ' + (e && e.message || e)); }
-    var topOut = ['TVWINDOW RESULTS (read-only)', 'getAvailableWindows: pending', 'getSource(MAIN): pending', 'getVideoResolution: pending'];
+    var topOut = ['TVWINDOW RESULTS v6 (read-only, Back to exit)', 'getAvailableWindows: pending', 'getSource(MAIN): pending', 'getVideoResolution: pending'];
     function tl(i, s) { topOut[i] = s; document.getElementById('top').textContent = topOut.join('\n'); }
     tl(0, topOut[0]);
     function safe(s) { try { return JSON.stringify(s); } catch (e) { return String(s); } }
