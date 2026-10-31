@@ -40,13 +40,14 @@
     function finish(err, value) { if (finished) return; finished = true; clearTimeout(timer); done(err, value); }
     return finish;
   }
-  function openHdmi(done) {
+  function openHdmi(id, done) {
+    var port = /^cleanframe\.hdmi:([1-9])$/.exec(id);
     if (!(window.tizen && window.tizen.tvwindow)) { unavailable(done); return; }
     done(null);
-    window.location.href = 'hdmi.html';
+    window.location.href = 'hdmi.html' + (port ? '?port=' + port[1] : '');
   }
   function launchApp(id, done) {
-    if (id === HDMI_TARGET) { openHdmi(done); return; }
+    if (id && id.indexOf(HDMI_TARGET) === 0) { openHdmi(id, done); return; }
     if (!api()) { unavailable(done); return; }
     var finish = bounded(done);
     try { api().launch(id, function () { finish(null); }, function (err) { finish(failure(err)); }); }

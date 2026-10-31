@@ -94,7 +94,7 @@ try {
       getAppsInfo(ok) { setTimeout(() => ok(catalogue), 0); },
       launch(id, ok) { setTimeout(ok, 0); }
     } };
-    localStorage.setItem('cleanframe.home.v1', JSON.stringify({ dock: ['netflix', 'youtube', 'disneyplus', 'primevideo', 'appletv', 'bbciplayer', 'itvx', 'channel4', 'hdmi'], wallpaper: 'misty', mode: 'fixed', theme: 'shore', lastApp: 'netflix' }));
+    localStorage.setItem('cleanframe.home.v1', JSON.stringify({ hdmiInputs: true, dock: ['hdmi1', 'hdmi2', 'hdmi3', 'hdmi4', 'netflix', 'youtube', 'disneyplus', 'primevideo', 'appletv', 'bbciplayer', 'itvx', 'channel4'], wallpaper: 'misty', mode: 'fixed', theme: 'shore', lastApp: 'netflix' }));
   });
   cdp = await page.context().newCDPSession(page);
   await cdp.send('Performance.enable');
@@ -115,7 +115,7 @@ try {
   await scene('settings');
   await sample('Settings navigation', ['down', 'down', 'up', 'up']);
   await scene('apps');
-  check('Performance inventory includes 24 real-adapter rows (23 installed apps plus HDMI)', (await call('state')).catalog.ids.length === 24);
+  check('Performance inventory includes 27 real-adapter rows (23 installed apps plus four HDMI inputs)', (await call('state')).catalog.ids.length === 27);
   await sample('All Apps grid navigation', ['down', 'down', 'right', 'up', 'up', 'left']);
   await scene('editor');
   await sample('Apps on Home navigation', ['down', 'down', 'down', 'up', 'up', 'up']);

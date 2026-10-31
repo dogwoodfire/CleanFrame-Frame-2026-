@@ -31,6 +31,7 @@ body{display:flex;align-items:center;justify-content:center;width:100%}
   var T = window.tizen, W = T && T.tvwindow;
   var ports = [], idx = 0, current = null, busy = false;
   var handedOver = false;
+  var wanted = Number((/[?&]port=(\d+)/.exec(window.location.search) || [])[1]) || 0;
   /* Same blurred panel backdrop the Home sheets use, for the wallpaper saved on this TV. */
   try {
     var saved = JSON.parse(localStorage.getItem('cleanframe.home.v1') || '{}'), id = saved.look && saved.look.wall || saved.wallpaper;
@@ -66,6 +67,12 @@ body{display:flex;align-items:center;justify-content:center;width:100%}
         ports.forEach(function (p, i) { if (p.number === current) idx = i; });
         if (!ports.length) say('The TV reports no HDMI inputs.');
         render();
+        if (wanted) {
+          var at = -1;
+          ports.forEach(function (p, i) { if (p.number === wanted) at = i; });
+          if (at >= 0) { idx = at; render(); apply(); }
+          else say('HDMI ' + wanted + ' is not available on this TV.');
+        }
       }, function (e) { say('Could not read the TV inputs. ' + failText(e)); });
     } catch (e) { say('Could not read the TV inputs. ' + failText(e)); }
   }

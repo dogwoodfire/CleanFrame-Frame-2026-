@@ -4,16 +4,20 @@
 
   /* ---------- Bundled data ---------- */
   var ASSETS = 'assets/', ICONS = ASSETS + 'icons/', WP = ASSETS + 'wallpapers/';
-  var CAP = 9, SCRIM_Y = 560;
+  var CAP = 12, SCRIM_Y = 560, ALL_ID = 'allapps';
   var DOCK_MODES = { both: { tw: 288, th: 200, pitch: 296 }, text: { tw: 288, th: 104, pitch: 296 }, icons: { tw: 176, th: 144, pitch: 184 } };
   var GRID_ROW = 240, GRID_COL = 344, COLS = 5;
   var ED_ROW = 80, ED_SEP = 56, ED_VIEW = 752;
   var PH_TOP = 220, PH_PITCH = 128, PH_FULL = 5, PH_HEIGHT = 944, PH_COMPACT_TOP = 144, PH_COMPACT_PITCH = 88, PH_COMPACT_VISIBLE = 9;
   var WALL_VISIBLE = 6, WALL_ROW = 92, WALL_DELAY = 200;
   var KEYS = { 37: 'left', 38: 'up', 39: 'right', 40: 'down', 13: 'ok', 27: 'back', 8: 'back', 10009: 'back', 461: 'back' };
-  var FULL = 'Home holds nine apps. Remove one first.', LAST = 'Home needs one app';
+  var FULL = 'Home holds twelve apps. Remove one first.', LAST = 'Home needs one app';
 
   var PRIMARY_APPS = [
+    { id: 'hdmi1', name: 'HDMI 1', mark: false, appId: 'cleanframe.hdmi:1' },
+    { id: 'hdmi2', name: 'HDMI 2', mark: false, appId: 'cleanframe.hdmi:2' },
+    { id: 'hdmi3', name: 'HDMI 3', mark: false, appId: 'cleanframe.hdmi:3' },
+    { id: 'hdmi4', name: 'HDMI 4', mark: false, appId: 'cleanframe.hdmi:4' },
     { id: 'netflix', name: 'Netflix', mark: true, appId: 'org.tizen.netflix-app' },
     { id: 'youtube', name: 'YouTube', mark: true, appId: '9Ur5IzDKqV.TizenYouTube' },
     { id: 'disneyplus', name: 'Disney+', mark: true, appId: 'MCmYXNxgcu.DisneyPlus' },
@@ -21,10 +25,12 @@
     { id: 'appletv', name: 'Apple TV', mark: true, appId: 'com.samsung.tv.aria-video' },
     { id: 'bbciplayer', name: 'BBC iPlayer', mark: false, appId: 'DqEoaplKlw.bbchybrid' },
     { id: 'itvx', name: 'ITVX', mark: false, appId: 'OEvCiupaFR.ITVHub' },
-    { id: 'channel4', name: 'Channel 4', mark: false, appId: 'OCaxbgg9v6.chfourctv' },
-    { id: 'hdmi', name: 'HDMI', mark: false, appId: 'cleanframe.hdmi' }
+    { id: 'channel4', name: 'Channel 4', mark: false, appId: 'OCaxbgg9v6.chfourctv' }
   ];
+  var HDMI_IDS = ['hdmi1', 'hdmi2', 'hdmi3', 'hdmi4'];
   var PRIMARY = PRIMARY_APPS.map(function (a) { return a.id; }), APPS = PRIMARY_APPS.slice(), ALPHA = [];
+  /* The Dock's trailing All apps button is a virtual entry: never saved, edited or listed. */
+  APPS.push({ id: ALL_ID, name: 'All apps', mark: true, brand: 'apps', appId: null });
   var WALLS = window.CleanFrameWallpapers || [{ id: 'misty', name: 'Misty coast', tone: 'light', ut: { tr: 'mist', br: 'mist' }, frostVeil: .20 }];
   var ADAPTIVE_INK = window.CleanFrameAdaptiveInk || {};
   WALLS.forEach(function (w) { w.ut = w.ut || { tr: 'light', br: 'light' }; w.frostVeil = w.frostVeil || .12; });
@@ -338,11 +344,9 @@
       if (!app(id) && id.indexOf('.') > 0) APPS.push({ id: id, appId: id, name: id.split('.').pop(), mark: false });
       if (app(id)) h.push(id);
     });
-    /* One-time migration: the HDMI tile took Plex's place; a Dock saved with Plex gets HDMI in that position once. */
-    if (!s.hdmiOffered) {
-      var legacy = Array.isArray(s.home) ? s.home : Array.isArray(s.dock) ? s.dock : [], at = legacy.indexOf('plex');
-      if (h.indexOf('hdmi') < 0 && at >= 0 && h.length) h.splice(Math.min(at, h.length), 0, 'hdmi');
-      h = h.slice(0, CAP);
+    /* One-time migration: the four HDMI inputs lead the Dock, replacing the earlier single HDMI picker or Plex tile. */
+    if (!s.hdmiInputs && h.length) {
+      h = HDMI_IDS.concat(h.filter(function (id) { return id !== 'hdmi' && id !== 'plex' && HDMI_IDS.indexOf(id) < 0; })).slice(0, CAP);
     }
     if (!h.length) h = PRIMARY.slice();
     (Array.isArray(s.recent) ? s.recent : []).forEach(function (id) { if (safeId(id) && app(id) && h.indexOf(id) < 0 && recent.indexOf(id) < 0 && recent.length < 5) recent.push(id); });
@@ -351,7 +355,7 @@
       apps: pick(modern.apps, LOOK_VALUES.apps, legacyList ? 'text' : 'both'), controls: pick(modern.controls, LOOK_VALUES.controls, 'both'),
       focus: pick(modern.focus, LOOK_VALUES.focus, legacyList ? 'type' : 'glass'), material: pick(modern.material, LOOK_VALUES.material, 'soft'),
       font: pick(modern.font, LOOK_VALUES.font, 'manrope'), wall: wall(modern.wall || s.wallpaper) ? modern.wall || s.wallpaper : WALLS[0].id,
-      hdmiOffered: true, home: h, recent: recent, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
+      hdmiInputs: true, home: h, recent: recent, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
       mode: pick(s.mode, MODES.map(function (m) { return m.id; }), 'fixed')
     };
   }
@@ -377,7 +381,7 @@
   }
   function clearSession() { S.undo = []; S.removedAt = {}; S.note = null; S.err = null; }
   function begin() { S.note = null; }
-  function next(home, recent) { var c = lookOf(S.c); c.home = home; c.recent = recent; c.lastApp = S.c.lastApp; c.mode = S.c.mode; return c; }
+  function next(home, recent) { var c = lookOf(S.c); c.hdmiInputs = true; c.home = home; c.recent = recent; c.lastApp = S.c.lastApp; c.mode = S.c.mode; return c; }
   function snap() { return { home: S.c.home.slice(), recent: S.c.recent.slice() }; }
   function pushRecent(list, id) { return [id].concat(without(list, id)).slice(0, 5); }
   function write(c, label) {
@@ -398,12 +402,16 @@
   function ensureSel() {
     var h = S.c.home, i;
     if (!h.length) { S.sel = null; return -1; }
+    if (S.sel === ALL_ID) {
+      if (S.c.layout === 'dock') { S.selIdx = h.length; return h.length; }
+      S.sel = h[h.length - 1];
+    }
     i = h.indexOf(S.sel);
     if (i < 0) { i = clamp(S.selIdx, 0, h.length - 1); S.sel = h[i]; }
     S.selIdx = i;
     return i;
   }
-  function setSel(id) { S.sel = id; S.selIdx = S.c.home.indexOf(id); }
+  function setSel(id) { S.sel = id; S.selIdx = id === ALL_ID ? S.c.home.length : S.c.home.indexOf(id); }
 
   /* Membership and order operations shared by B and C. A works on slots (below). */
   function homeRemove(id) {
@@ -489,7 +497,7 @@
         a.name = PRIMARY.indexOf(id) >= 0 ? PRIMARY_APPS[PRIMARY.indexOf(id)].name : String(entry.name).slice(0, 160);
         ALPHA.push(id);
       });
-      if (ALPHA.indexOf('hdmi') < 0) ALPHA.push('hdmi');
+      HDMI_IDS.forEach(function (id) { if (ALPHA.indexOf(id) < 0) ALPHA.push(id); });
       ALPHA.sort(function (a, b) { return app(a).name.toLowerCase().localeCompare(app(b).name.toLowerCase()); });
       catalog.loaded = true; catalog.error = null; catalog.revision++;
       if (top().id === 'apps' && oldFocus && ALPHA.indexOf(oldFocus) >= 0) top().f.i = ALPHA.indexOf(oldFocus);
@@ -522,7 +530,7 @@
     push(e); refreshCatalog(); return e;
   }
   function openEditor(origin) {
-    var i = ensureSel();
+    var i = Math.min(ensureSel(), S.c.home.length - 1);
     clearSession();
     refreshCatalog();
     push({ id: 'editor', origin: origin, lifted: null, top: 0, otherReturn: { id: otherList()[0] || null, index: 0, top: 0 }, f: { zone: S.c.home.length ? 'home' : 'other', i: Math.max(0, i), part: 'name', h: 1, j: 0 } });
@@ -556,12 +564,12 @@
       else if (k === 'back') openMessage('leave');
       else if (!h.length) { if (k === 'ok') addAppsRoute(); }
       else if (k === x.prev && i > 0) setSel(h[i - 1]);
-      else if (k === x.next && i < h.length - 1) setSel(h[i + 1]);
-      else if (k === 'ok') launch(S.sel);
+      else if (k === x.next && i < h.length) setSel(i + 1 < h.length ? h[i + 1] : ALL_ID);
+      else if (k === 'ok') { if (S.sel === ALL_ID) openApps(); else launch(S.sel); }
     },
     point: function (t, z, i) {
       if (z === 'util') { t.f.zone = 'util'; t.f.u = i; S.lastUtil = i; }
-      else if (z === 'app') { t.f.zone = 'apps'; setSel(S.c.home[i]); }
+      else if (z === 'app') { t.f.zone = 'apps'; setSel(i >= S.c.home.length ? ALL_ID : S.c.home[i]); }
       else if (z === 'empty') t.f.zone = 'apps';
       else return;
       this.key(t, 'ok');
@@ -1048,6 +1056,7 @@
 
   function homeState(t) {
     var h = S.c.home, hs = { mode: 'browse', zone: null, i: Math.max(0, ensureSel()), u: -1, lifted: false, from: -1, arr: null, items: h.map(function (id) { return { key: id, kind: 'app', id: id }; }) };
+    if (h.length && S.c.layout === 'dock') hs.items.push({ key: ALL_ID, kind: 'app', id: ALL_ID });
     if (isSettingsDetail(t)) hs.zone = 'preview';
     else if (t.id === 'home') { hs.zone = t.f.zone; hs.u = t.f.u; }
     return hs;
