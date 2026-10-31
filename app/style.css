@@ -633,3 +633,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .l-list .quiet-utils.is-text .u-content>*+*{margin-left:0;margin-right:0}
 .quiet-utils.is-text .u-content>*+*{margin-left:0}
 .l-list .quiet-utils.is-text .u .u-content>*+*{margin-right:0}
+
+/* Selection is remembered but not drawn once focus leaves the Dock. */
+.stage:not(.at-appearance):not(.at-wallpaper) .plate.on-sel,.stage:not(.at-appearance):not(.at-wallpaper) .ph-plate.on-sel{opacity:0}
