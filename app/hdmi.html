@@ -4,16 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CleanFrame HDMI</title>
+<link rel="stylesheet" href="assets/fonts.css">
 <style>
-html,body{margin:0;height:100%;background:#0b0d12;color:#fff;font:500 34px/1.3 Manrope,system-ui,sans-serif;overflow:hidden}
-#bar{display:flex;flex-direction:column;align-items:center;padding:28px 36px;border-radius:32px;background:rgba(14,16,22,.82)}
+html,body{margin:0;height:100%;background:#0b0d12 center/cover no-repeat;color:#fff;font:500 34px/1.3 Manrope,system-ui,sans-serif;overflow:hidden}
+#bar{display:flex;flex-direction:column;align-items:center;padding:28px 36px;border-radius:32px;background:rgba(14,16,22,.55)}
 #title{font-size:30px;opacity:.75;margin-bottom:20px}
 #row{display:flex}
 .port{margin:0 9px;min-width:250px;padding:20px 26px;border-radius:22px;background:rgba(255,255,255,.08);text-align:center;border:3px solid transparent}
 .port.sel{background:rgba(255,255,255,.22);border-color:#fff}
 .port small{display:block;font-size:24px;opacity:.7;margin-top:4px}
 .port.cur small:after{content:" · now"}
-#msg{min-height:1.3em;font-size:26px;opacity:.85}
+#msg{min-height:1.3em;font-size:26px;opacity:.85;margin-top:22px}
 #bar{position:static;transform:none;margin:240px auto 0;width:max-content}
 </style>
 </head>
@@ -23,11 +24,19 @@ html,body{margin:0;height:100%;background:#0b0d12;color:#fff;font:500 34px/1.3 M
   <div id="row"></div>
   <div id="msg"></div>
 </div>
+<script src="assets/wallpapers/catalog.js"></script>
 <script>
 (function () {
   'use strict';
   var T = window.tizen, W = T && T.tvwindow;
   var ports = [], idx = 0, current = null, busy = false;
+  var handedOver = false;
+  /* Same blurred panel backdrop the Home sheets use, for the wallpaper saved on this TV. */
+  try {
+    var saved = JSON.parse(localStorage.getItem('cleanframe.home.v1') || '{}'), id = saved.look && saved.look.wall || saved.wallpaper;
+    var known = (window.CleanFrameWallpapers || []).some(function (w) { return w.id === id; });
+    if (known) document.body.style.backgroundImage = 'url(assets/wallpapers/' + id + '-panel.jpg)';
+  } catch (e) {}
   var row = document.getElementById('row'), msg = document.getElementById('msg');
 
   function text(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -61,6 +70,7 @@ html,body{margin:0;height:100%;background:#0b0d12;color:#fff;font:500 34px/1.3 M
     } catch (e) { say('Could not read the TV inputs. ' + failText(e)); }
   }
   function handOver() {
+    handedOver = true;
     try {
       T.application.launch('org.tizen.tv-viewer', function () { busy = false; },
         function (e) { say('Input set, but the TV viewer would not open. ' + failText(e)); busy = false; });
@@ -76,6 +86,10 @@ html,body{margin:0;height:100%;background:#0b0d12;color:#fff;font:500 34px/1.3 M
     } catch (e) { say('Could not switch. ' + failText(e)); busy = false; }
   }
   function leave() { home(); }
+  /* Coming back from the TV viewer: return to the Dock, not a stale 'Switching…' picker. */
+  document.addEventListener('visibilitychange', function () {
+    if (handedOver && !document.hidden) home();
+  });
   document.addEventListener('keydown', function (ev) {
     var k = ev.keyCode;
     if (k === 10009 || k === 27 || k === 8 || k === 461) { ev.preventDefault(); leave(); return; }
