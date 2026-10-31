@@ -115,7 +115,7 @@ try {
   await scene('settings');
   await sample('Settings navigation', ['down', 'down', 'up', 'up']);
   await scene('apps');
-  check('Performance inventory includes 23 real-adapter rows', (await call('state')).catalog.ids.length === 23);
+  check('Performance inventory includes 24 real-adapter rows (23 installed apps plus HDMI)', (await call('state')).catalog.ids.length === 24);
   await sample('All Apps grid navigation', ['down', 'down', 'right', 'up', 'up', 'left']);
   await scene('editor');
   await sample('Apps on Home navigation', ['down', 'down', 'down', 'up', 'up', 'up']);
